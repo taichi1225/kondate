@@ -1,5 +1,5 @@
 import streamlit as st
-from openai import OpenAI  # 1. クラスをインポート
+import openai
 import os
 
 # ページの設定
@@ -9,10 +9,12 @@ st.set_page_config(
     layout="centered"
 )
 
-# スタイル（カード風デザイン）
+# スタイル（カード風デザイン）の適用
 st.markdown("""
     <style>
-    .main { background-color: #f8f9fa; }
+    .main {
+        background-color: #f8f9fa;
+    }
     .stButton>button {
         width: 100%;
         border-radius: 20px;
@@ -30,18 +32,17 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# タイトル
 st.title("🍳 AI冷蔵庫レシピ")
 st.caption("冷蔵庫にあるもので、プロの料理家が「意外な一皿」を提案します。")
 
-# --- 2. クライアントの初期化 ---
+# APIキーの設定確認
 try:
-    # Streamlit CloudのSecretsから取得
-    client = OpenAI(
-        api_key=st.secrets["OPENAI_API_KEY"],
-        organization=st.secrets.get("org-7GrkeEBEcYJYYsBLsQuKi7aP") # 任意
-    )
-except Exception as e:
-    st.error("🔑 APIキーが設定されていません。Streamlit CloudのSettings > Secretsを確認してください。")
+    # セキュリティのため、本来は st.secrets["OPENAI_API_KEY"] 等から取得することを推奨します
+    openai.organization = "org-7GrkeEBEcYJYYsBLsQuKi7aP"
+    openai.api_key = st.secrets["OPENAI_API_KEY"]
+except Exception:
+    st.error("🔑 APIキーが見つかりません。`.streamlit/secrets.toml` または環境変数を確認してください。")
     st.stop()
 
 # --- 入力エリア ---
@@ -49,13 +50,13 @@ with st.container():
     st.subheader("🛒 冷蔵庫のなかみ")
     ingredients = st.text_input("使いたい食材を入力（例: 鶏肉, キャベツ, 納豆）", placeholder="カンマ区切りで入力してください")
     
-    col1, col2, col3 = st.columns([1, 1, 1])
+    col1, col2, col3 = st.columns([1, 1, 1]) # 難易度用にカラムを調整
     with col1:
         category = st.selectbox("料理のジャンル", ["指定なし（お任せ）", "和食", "洋食", "中華", "エスニック"])
     with col2:
         difficulty = st.selectbox("難易度", ["簡単（時短）", "ふつう", "本格的（じっくり）"])
     with col3:
-        st.write("")
+        st.write("") # スペース調整
         generate_btn = st.button("提案してもらう！")
 
 # --- ロジック実行 ---
@@ -93,13 +94,12 @@ if generate_btn:
                 [ユーザーへの応援メッセージ]
                 """
 
-                # --- 3. 最新のAPI呼び出し形式 ---
-                response = client.chat.completions.create(
-                    model="gpt-4o", 
-                    messages=[
-                        {"role": "system", "content": "あなたは遊び心溢れるプロの料理研究家です。"},
-                        {"role": "user", "content": prompt}
-                    ],
+                # API呼び出し
+                response = openai.ChatCompletion.create(
+                    model="gpt-4o",  # または最新のgpt-5系
+                    messages=[{"role": "system", "content": "あなたは遊び心溢れるプロの料理研究家です。"},
+                              {"role": "user", "content": prompt}],
+                    stop=None,
                     temperature=0.9,
                 )
 
@@ -114,5 +114,6 @@ if generate_btn:
             except Exception as e:
                 st.error(f"通信エラーが発生しました: {e}")
 
+# フッター
 st.divider()
 st.caption("Produced by AI Recipe Assistant")
