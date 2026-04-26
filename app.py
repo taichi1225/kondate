@@ -39,6 +39,7 @@ st.caption("冷蔵庫にあるもので、プロの料理家が「意外な一�
 # APIキーの設定確認
 try:
     # セキュリティのため、本来は st.secrets["OPENAI_API_KEY"] 等から取得することを推奨します
+    openai.organization = "org-7GrkeEBEcYJYYsBLsQuKi7aP"
     openai.api_key = st.secrets["OPENAI_API_KEY"]
 except Exception:
     st.error("🔑 APIキーが見つかりません。`.streamlit/secrets.toml` または環境変数を確認してください。")
