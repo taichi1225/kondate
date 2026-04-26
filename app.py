@@ -37,7 +37,7 @@ st.caption("次世代AIが、あなたの冷蔵庫に眠る食材から『最高
 try:
     # 💡 内部的には最新のフラグシップモデルを指定
     # 将来的に "gpt-5.4" などのIDが公開されたらここを書き換えるだけでOKです
-    client = OpenAI(st.secrets["OPENAI_API_KEY"])
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
     MODEL_NAME = "gpt-5.4" # 現時点での最高峰。GPT-5系リリース後は "gpt-5" 等に変更
 except Exception:
     st.error("🔑 APIキーが設定されていません。Streamlit CloudのSettings > Secretsを確認してください。")
