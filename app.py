@@ -1,106 +1,112 @@
 import streamlit as st
-import openai
-import os
+from openai import OpenAI
 
-# ページの設定
+# --- ページ設定 ---
 st.set_page_config(
-    page_title="AI冷蔵庫レシピ - 今日の献立",
+    page_title="AI冷蔵庫レシピ - Next Gen",
     page_icon="🍳",
     layout="centered"
 )
 
-# スタイル（カード風デザイン）の適用
+# モダンなUIデザイン（CSS）
 st.markdown("""
     <style>
-    .main {
-        background-color: #f8f9fa;
-    }
+    .main { background-color: #f8f9fa; }
     .stButton>button {
         width: 100%;
         border-radius: 20px;
         height: 3em;
         background-color: #ff4b4b;
         color: white;
+        font-weight: bold;
     }
     .recipe-card {
         background-color: white;
-        padding: 20px;
+        padding: 25px;
         border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-top: 20px;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# タイトル
+# タイトル・ヘッダー
 st.title("🍳 AI冷蔵庫レシピ")
-st.caption("冷蔵庫にあるもので、プロの料理家が「意外な一皿」を提案します。")
-
-# APIキーの設定確認
+st.caption("次世代AIが、あなたの冷蔵庫に眠る食材から『最高の一皿』をデザインします。")
+# --- クライアント初期化（Streamlit Secretsを使用） ---
 try:
-    # セキュリティのため、本来は st.secrets["OPENAI_API_KEY"] 等から取得することを推奨します
-    openai.organization = "org-7GrkeEBEcYJYYsBLsQuKi7aP"
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
+    # 💡 内部的には最新のフラグシップモデルを指定
+    # 将来的に "gpt-5.4" などのIDが公開されたらここを書き換えるだけでOKです
+    client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+    MODEL_NAME = "gpt-4o" # 現時点での最高峰。GPT-5系リリース後は "gpt-5" 等に変更
 except Exception:
-    st.error("🔑 APIキーが見つかりません。`.streamlit/secrets.toml` または環境変数を確認してください。")
+    st.error("🔑 APIキーが設定されていません。Streamlit CloudのSettings > Secretsを確認してください。")
     st.stop()
 
 # --- 入力エリア ---
 with st.container():
     st.subheader("🛒 冷蔵庫のなかみ")
-    ingredients = st.text_input("使いたい食材を入力（例: 鶏肉, キャベツ, 納豆）", placeholder="カンマ区切りで入力してください")
+    ingredients = st.text_input(
+        "使いたい食材を入力", 
+        placeholder="例: 鶏もも肉, 玉ねぎ, ラー油, ヨーグルト"
+    )
     
-    col1, col2, col3 = st.columns([1, 1, 1]) # 難易度用にカラムを調整
+    col1, col2, col3 = st.columns([1, 1, 1])
     with col1:
-        category = st.selectbox("料理のジャンル", ["指定なし（お任せ）", "和食", "洋食", "中華", "エスニック"])
+        category = st.selectbox("ジャンル", ["指定なし", "和食", "洋食", "中華", "エスニック", "創作料理"])
     with col2:
-        difficulty = st.selectbox("難易度", ["簡単（時短）", "ふつう", "本格的（じっくり）"])
+        difficulty = st.selectbox("難易度", ["爆速（5分）", "ふつう", "本格派（じっくり）"])
     with col3:
         st.write("") # スペース調整
-        generate_btn = st.button("提案してもらう！")
+        generate_btn = st.button("献立を生成！")
 
-# --- ロジック実行 ---
+# --- 献立生成ロジック ---
 if generate_btn:
     if not ingredients:
-        st.warning("⚠️ 食材を何か入力してください。")
+        st.warning("⚠️ 食材を入力してください。")
     else:
-        with st.spinner('AIシェフが独創的なメニューを考案中...'):
+        with st.spinner('次世代AIシェフが、究極の組み合わせを思考中...'):
             try:
-                # プロンプトの構築
+                # プロンプトの構築（GPT-5系の高い推論力を引き出す設計）
                 prompt = f"""
-                あなたはプロの料理研究家です。ユーザーの要望を汲み取りつつ、あえて予想外の組み合わせや、遊び心のあるメニューを1つ提案してください。
-                
-                【条件】
-                - 使用食材: {ingredients}
-                - カテゴリ: {category}
+                あなたは世界最高峰の料理研究家です。ユーザーの冷蔵庫にある食材を使い、
+                あえて予想外の組み合わせや、遊び心のある「今日しか出会えないメニュー」を1つ提案してください。
+
+                【ユーザーの要望】
+                - 食材: {ingredients}
+                - ジャンル: {category}
                 - 難易度: {difficulty}
-                - レシピは簡潔に。
-                - 同じ食材でも毎回異なるメニューになるよう、独創的な視点で考えてください。
+
+                【指示】
+                - 簡潔ながら、作るのが楽しみになるような魅力的なレシピにしてください。
+                - 食材同士の意外な化学反応（ペアリング）を1つ取り入れてください。
+                - 難易度設定に合わせた調理工程にしてください。
 
                 【出力形式】
-                以下の形式で出力してください（Markdown形式）:
-                ### 料理名: [料理名]
+                ### 料理名: [魅力的な名前]
                 
+                **驚きのペアリングポイント**
+                [なぜこの組み合わせが美味しいのか、プロの視点で一言]
+
                 **材料**
-                - [材料1]
-                - [材料2]...
+                - [分量は目安で可]
                 
-                **作り方**
-                1. [手順1]
-                2. [手順2]...
+                **作り方（ステップ形式）**
+                1. [工程]
                 
                 ---
-                **AIからの今日の一言**
-                [ユーザーへの応援メッセージ]
+                **AIシェフからの応援メッセージ**
+                [遊び心のある一言]
                 """
 
                 # API呼び出し
-                response = openai.ChatCompletion.create(
-                    model="gpt-4o",  # または最新のgpt-5系
-                    messages=[{"role": "system", "content": "あなたは遊び心溢れるプロの料理研究家です。"},
-                              {"role": "user", "content": prompt}],
-                    stop=None,
-                    temperature=0.9,
+                response = client.chat.completions.create(
+                    model=MODEL_NAME,
+                    messages=[
+                        {"role": "system", "content": "あなたは創造的で親しみやすいプロの料理研究家です。"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.9, # 独創性を高める
                 )
 
                 recipe_content = response.choices[0].message.content
@@ -112,8 +118,8 @@ if generate_btn:
                 st.markdown('</div>', unsafe_allow_html=True)
 
             except Exception as e:
-                st.error(f"通信エラーが発生しました: {e}")
+                st.error(f"エラーが発生しました。APIキーや通信環境を確認してください。\nDetails: {e}")
 
 # フッター
 st.divider()
-st.caption("Produced by AI Recipe Assistant")
+st.caption("AI Recipe Engine | Personalized for Data Scientist")
