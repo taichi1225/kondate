@@ -38,7 +38,7 @@ try:
     # Streamlit CloudのSecretsから取得
     client = OpenAI(
         api_key=st.secrets["OPENAI_API_KEY"],
-        organization=st.secrets.get("OPENAI_ORGANIZATION") # 任意
+        organization=st.secrets.get("org-7GrkeEBEcYJYYsBLsQuKi7aP") # 任意
     )
 except Exception as e:
     st.error("🔑 APIキーが設定されていません。Streamlit CloudのSettings > Secretsを確認してください。")
